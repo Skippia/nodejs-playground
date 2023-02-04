@@ -4,14 +4,24 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js", 
-    "dev": "nodemon server.js --watch"
+    "start": "nodemon ./src/server.js",
+    "cluster": "node ./src/modules/cluster.js",
+    "event": "nodemon ./src/modules/event.js",
+    "file": "nodemon ./src/modules/file.js",
+    "os": "nodemon ./src/modules/os.js",
+    "path": "nodemon ./src/modules/path.js",
+    "process": "cross-env NODE_ENV=production nodemon ./src/modules/process.js",
+    "stream": "nodemon ./src/modules/stream.js",
+    "url": "nodemon ./src/modules/url.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "http": "^0.0.1-security"
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.0.3",
+    "http": "^0.0.1-security",
+    "mongodb": "^4.13.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.20"
