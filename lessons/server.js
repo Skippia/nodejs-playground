@@ -2,15 +2,21 @@ const http = require('http')
 const fs = require('fs')
 const path = require('path')
 
+/**
+ * Req is readable stream from client
+ * Res is writable stream on the server (which will be returned to the client)
+ * Res is stream, when we call res.end() - we close this stream and return it to the client
+ */
+
 const server = http.createServer((req, res) => {
 	if (req.method === 'POST') {
 		const body = []
 		res.writeHead(200, {
 			'Content-Type': 'text/html; charset=utf-8'
 		})
-
+		
 		req.on('data', data => {
-			body.push(Buffer.from(data))
+		body.push(Buffer.from(data))
 		})
 
 		req.on('end', () => {
