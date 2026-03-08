@@ -39,6 +39,13 @@ nodejs-playground/
 │       ├── stream.js          # Streams + pipe
 │       ├── file.js            # Файловая система (fs)
 │       ├── cluster.js         # Кластеризация
+│       ├── async-iterator.js  # AsyncIterator (events, streams, pipeline)
+│       ├── bigint.js          # Float precision & BigInt
+│       ├── json-stream.js     # Streaming large JSON (SAX pattern)
+│       ├── stream-backpressure.js # Stream backpressure deep dive
+│       ├── stream-copy.js     # Implementing pipe() with async iterators
+│       ├── stream-modes.js    # Flowing vs Paused modes
+│       ├── uncaught-exception.js  # Graceful shutdown on errors
 │       └── text.txt           # Тестовый файл (результат работы file.js)
 └── .gitignore
 ```
@@ -218,6 +225,82 @@ kill <pid>
 # => мастер автоматически создаст новый воркер
 ```
 
+### async-iterator.js
+
+**Файл:** `src/modules/async-iterator.js` | **Запуск:** `npm run async-iterator`
+
+Async iterators (`for await...of`) in Node.js:
+
+- **`events.on(emitter, event)`** — returns an async iterable over event emissions. Processes events sequentially (not suitable for concurrent workloads like HTTP servers).
+- **Readable streams** implement `Symbol.asyncIterator`, so `for await (const chunk of readable)` replaces manual `data`/`end` event handling.
+- **`stream.Readable.from(iterable)`** — creates a readable stream from any sync/async iterable.
+- **`pipeline()` with generator functions** — generators act as transform steps in a pipeline.
+
+### bigint.js
+
+**Файл:** `src/modules/bigint.js` | **Запуск:** `npm run bigint`
+
+IEEE 754 precision limits and BigInt:
+
+- `Number.MAX_SAFE_INTEGER` = 2^53 - 1. Larger integers silently lose precision.
+- `JSON.parse()` also loses precision for large numbers (JSON `number` type → JS `Number`).
+- **BigInt** — native arbitrary-precision integers. Create with `200n` or `BigInt('200')`.
+- Cannot mix BigInt and Number in arithmetic. JSON doesn't support BigInt natively.
+- Use `json-bigint` library for parsing JSON with large numbers.
+
+### json-stream.js
+
+**Файл:** `src/modules/json-stream.js` | **Запуск:** `npm run json-stream`
+
+Streaming large JSON files without loading into memory:
+
+- **SAX pattern** (Simple API for XML) — event-driven parsing, O(1) memory.
+- **JSONStream** (npm) — SAX-based JSON parser. `parse('.')` streams array elements; `parse('list.*')` extracts specific nested arrays.
+- **NDJSON** (newline-delimited JSON) — simplest streaming format, parse line by line with `readline`.
+
+### stream-backpressure.js
+
+**Файл:** `src/modules/stream-backpressure.js` | **Запуск:** `npm run stream-backpressure`
+
+Deep dive into stream backpressure:
+
+- `writable.write(chunk)` returns `false` when buffer >= `highWaterMark` → producer must pause until `drain` event.
+- **Without backpressure** on a 2.2GB file: ~980MB memory. **With backpressure**: ~56MB (17x difference).
+- `pipe()` and `pipeline()` handle backpressure automatically.
+- Missing backpressure handling is a potential DoS vector.
+
+### stream-copy.js
+
+**Файл:** `src/modules/stream-copy.js` | **Запуск:** `npm run stream-copy`
+
+Implementing `pipe()` manually with async iterators:
+
+- `_write(dest, chunk)` — returns a Promise; resolves immediately if buffer has space, waits for `drain` otherwise.
+- `streamCopy(src, dest)` — uses `for await...of` to read chunks + `_write()` for backpressure-safe writing.
+- Demonstrates the core mechanism that `pipe()` implements internally.
+
+### stream-modes.js
+
+**Файл:** `src/modules/stream-modes.js` | **Запуск:** `npm run stream-modes`
+
+Flowing vs Paused mode in readable streams:
+
+- All readable streams start in **paused** mode. If you don't switch to flowing mode, `end` never fires (request hangs!).
+- **Flowing mode** triggers: `data` event, `pipe()`, `resume()`, or `for await...of`.
+- **Paused mode**: use `readable` event + `read()` to pull data manually.
+- Interactive demo server on port 3001 with 4 routes demonstrating each approach.
+
+### uncaught-exception.js
+
+**Файл:** `src/modules/uncaught-exception.js` | **Запуск:** `npm run uncaught-exception`
+
+Graceful shutdown on uncaught errors:
+
+- `process.on('uncaughtException')` / `process.on('unhandledRejection')` — last resort handlers.
+- `graceful()` helper: catches errors, stops accepting new connections, sets `Connection: close`, exits after timeout.
+- Without graceful shutdown, a single error kills all in-flight requests.
+- In production, combine with process managers (PM2, systemd, K8s) for auto-restart.
+
 ## npm-скрипты
 
 | Скрипт          | Команда                                                     | Описание                         |
@@ -231,6 +314,13 @@ kill <pid>
 | `npm run process`| `cross-env NODE_ENV=production nodemon ./src/modules/process.js` | Переменные окружения        |
 | `npm run stream` | `nodemon ./src/modules/stream.js`                          | Потоки и pipe                    |
 | `npm run url`    | `nodemon ./src/modules/url.js`                             | Разбор URL                       |
+| `npm run async-iterator` | `node ./src/modules/async-iterator.js`           | AsyncIterator (events, streams)  |
+| `npm run bigint` | `node ./src/modules/bigint.js`                              | Float precision & BigInt         |
+| `npm run json-stream` | `node ./src/modules/json-stream.js`                    | Streaming large JSON             |
+| `npm run stream-backpressure` | `node ./src/modules/stream-backpressure.js`     | Backpressure deep dive           |
+| `npm run stream-copy` | `node ./src/modules/stream-copy.js`                    | pipe() via async iterators       |
+| `npm run stream-modes` | `node ./src/modules/stream-modes.js`                  | Flowing vs Paused modes          |
+| `npm run uncaught-exception` | `node ./src/modules/uncaught-exception.js`       | Graceful error shutdown          |
 
 ## Зависимости
 

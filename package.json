@@ -12,7 +12,14 @@
     "path": "nodemon ./src/modules/path.js",
     "process": "cross-env NODE_ENV=production nodemon ./src/modules/process.js",
     "stream": "nodemon ./src/modules/stream.js",
-    "url": "nodemon ./src/modules/url.js"
+    "url": "nodemon ./src/modules/url.js",
+    "async-iterator": "node ./src/modules/async-iterator.js",
+    "bigint": "node ./src/modules/bigint.js",
+    "json-stream": "node ./src/modules/json-stream.js",
+    "stream-backpressure": "node ./src/modules/stream-backpressure.js",
+    "stream-copy": "node ./src/modules/stream-copy.js",
+    "stream-modes": "node ./src/modules/stream-modes.js",
+    "uncaught-exception": "node ./src/modules/uncaught-exception.js"
   },
   "keywords": [],
   "author": "",
